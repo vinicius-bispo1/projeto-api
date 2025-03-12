@@ -64,7 +64,7 @@
 
 # Por ele já ser integrado ao python não precisamos baixar, apenas importar
 
-from flask import Flask
+from flask import Flask, request, jsonify
 import sqlite3
 
 
@@ -99,6 +99,37 @@ init_db()
 @app.route('/')
 def homepage():
     return "<h3>Minha página usando Flask</h3>"
+
+# Define uma rota '/doar' que aceita requisições do tipo POST
+
+
+@app.route('/doar', methods=['POST'])
+def doar():
+    # Obtém os dados enviados na requisição em formato JSON
+    dados = request.get_json()
+
+    # Extrai os valores dos campos do JSON recebido
+    titulo = dados.get('titulo')
+    categoria = dados.get('categoria')
+    autor = dados.get('autor')
+    imagem_url = dados.get('imagem_url')
+
+    # Verifica se algum dos campos obrigatórios está ausente
+    if not titulo or not categoria or not autor or not imagem_url:
+        # Retorna erro 400 (Bad Request)
+        return jsonify({"erro": "Todos os campos são obrigatórios"}), 400
+
+    # Conecta ao banco de dados SQLite
+    with sqlite3.connect('database.db') as conn:
+        # Executa um comando SQL para inserir os dados na tabela 'livros'
+        conn.execute(f""" INSERT INTO livros (titulo, categoria, autor, imagem_url)
+                     VALUES('{titulo}', '{categoria}', '{autor}', '{imagem_url}')
+                     """)
+        # Confirma a transação para salvar as alterações no banco de dados
+        conn.commit()
+
+        # Retorna uma mensagem de sucesso com o código 201 (Created)
+        return jsonify({"mensagem": "Livro cadastrado com sucesso"}), 201
 
 
 if __name__ == "__main__":
